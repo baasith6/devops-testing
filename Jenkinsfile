@@ -33,7 +33,11 @@ pipeline {
             steps {
                 echo '🏷️  Tagging Docker image...'
                 script {
-                    def commitHash = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    // Get commit hash - write to file and read it (Windows compatible)
+                    bat """
+                        git rev-parse --short HEAD > commit_hash.txt
+                    """
+                    def commitHash = readFile('commit_hash.txt').trim()
                     def version = "v1.0.${env.BUILD_NUMBER}"
                     
                     bat """
@@ -68,7 +72,8 @@ pipeline {
             steps {
                 echo '📤 Pushing image to Docker Hub...'
                 script {
-                    def commitHash = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    // Get commit hash from file (already created in Tag stage)
+                    def commitHash = readFile('commit_hash.txt').trim()
                     def version = "v1.0.${env.BUILD_NUMBER}"
                     
                     bat """
