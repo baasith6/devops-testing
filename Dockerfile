@@ -15,6 +15,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Create public directory if it doesn't exist (Next.js needs it)
+RUN mkdir -p ./public
+
 # Set environment variable for build
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -33,12 +36,12 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy necessary files from builder
-# Create public directory first
-RUN mkdir -p ./public
-# Copy public directory if it exists (we created it, so it will exist)
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public/
+# Copy standalone (includes public if it exists)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Create public directory (Next.js standalone may need it)
+RUN mkdir -p ./public && chown nextjs:nodejs ./public
 
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app
