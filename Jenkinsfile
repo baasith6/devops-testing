@@ -13,7 +13,7 @@ pipeline {
             steps {
                 echo '📦 Checking out code from repository...'
                 checkout scm
-                sh 'git --version'
+                bat 'git --version'
             }
         }
         
@@ -21,7 +21,7 @@ pipeline {
             steps {
                 echo '🔨 Building Docker image...'
                 script {
-                    sh """
+                    bat """
                         docker build -t ${IMAGE_NAME}:latest .
                     """
                     echo "✅ Docker image built successfully: ${IMAGE_NAME}:latest"
@@ -33,10 +33,10 @@ pipeline {
             steps {
                 echo '🏷️  Tagging Docker image...'
                 script {
-                    def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    def commitHash = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     def version = "v1.0.${env.BUILD_NUMBER}"
                     
-                    sh """
+                    bat """
                         docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:${version}
                         docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:${commitHash}
                     """
@@ -56,8 +56,8 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh """
-                        echo \${DOCKER_PASS} | docker login -u \${DOCKER_USER} --password-stdin
+                    bat """
+                        docker login -u %DOCKER_USER% -p %DOCKER_PASS%
                     """
                     echo "✅ Successfully logged in to Docker Hub"
                 }
@@ -68,10 +68,10 @@ pipeline {
             steps {
                 echo '📤 Pushing image to Docker Hub...'
                 script {
-                    def commitHash = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    def commitHash = bat(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
                     def version = "v1.0.${env.BUILD_NUMBER}"
                     
-                    sh """
+                    bat """
                         docker push ${IMAGE_NAME}:latest
                         docker push ${IMAGE_NAME}:${version}
                         docker push ${IMAGE_NAME}:${commitHash}
@@ -101,11 +101,8 @@ pipeline {
         }
         always {
             echo '🧹 Cleaning up...'
-            // Optional: Clean up old images
-            sh '''
-                docker system prune -f || true
-            '''
+            // Optional: Clean up old images (using bat for Windows)
+            bat 'docker system prune -f' 
         }
     }
 }
-
